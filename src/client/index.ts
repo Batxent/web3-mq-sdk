@@ -21,6 +21,7 @@ import {
   Web3MQBridgeOptions,
 } from '../types';
 import { Dapp } from '../dapp';
+import { MlsClient } from 'mls';
 
 export class Client {
   private static _instance: Client | null;
@@ -39,6 +40,7 @@ export class Client {
   topic: Topic;
   storage: Storage;
   dapp: Dapp;
+  mls: MlsClient;
 
   constructor(keys: KeyPairsType) {
     this.keys = keys;
@@ -52,6 +54,7 @@ export class Client {
     this.topic = new Topic(this);
     this.storage = new Storage(this);
     this.dapp = new Dapp(this);
+    this.mls = new MlsClient(this);
   }
 
   public static init = async (
@@ -80,7 +83,6 @@ export class Client {
     if (Client._instance.keys.PrivateKey !== keys.PrivateKey) {
       Client._instance = new Client(keys);
     }
-    return Client._instance as Client;
   };
 
   public static getSignClient = (
