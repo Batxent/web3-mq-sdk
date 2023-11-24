@@ -1,5 +1,5 @@
 import { Client } from '../client';
-import {ClientKeyPaires, PageParams, MessageStatus, MessageListItem, DidType} from '../types';
+import { ClientKeyPaires, PageParams, MessageStatus, MessageListItem, DidType } from '../types';
 import {
   getDataSignature,
   renderMessagesList,
@@ -8,6 +8,7 @@ import {
   saveMessageUpdateDate,
   getGroupId,
   updateMessageLoadStatus,
+  isGroupTopic,
 } from '../utils';
 import { getMessageListRequest, changeMessageStatusRequest } from '../api';
 import { PbTypeMessage, PbTypeMessageStatusResp, PbTypeMessageChangeStatus } from '../core/pbType';
@@ -80,18 +81,29 @@ export class Message {
 
   async sendMessage(msg: string, userId?: string, didType?: DidType) {
     const { keys, connect, channel } = this._client;
-    const topicId = userId ? await transformAddress(userId, didType) : channel.activeChannel?.chatid;
+    const topicId = userId
+      ? await transformAddress(userId, didType)
+      : channel.activeChannel?.chatid;
 
     if (topicId) {
+      if (isGroupTopic(topicId)) {
+        msg = await this._client.mls.mlsEncryptMsg(msg, topicId);
+      }
+
       this.msg_text = msg;
       const { concatArray, msgid } = await sendMessageCommand(keys, topicId, msg, connect.nodeId);
 
       const tempMessageData = {
         messageId: msgid,
         timestamp: BigInt(Math.round(Date.now() / 1000)),
+        contentTopic: topicId,
       };
 
-      const tempMessage = renderMessage(PbTypeMessageStatusResp, tempMessageData, this._client);
+      const tempMessage = await renderMessage(
+        PbTypeMessageStatusResp,
+        tempMessageData,
+        this._client,
+      );
       if (this.messageList) {
         this.messageList = [...this.messageList, { ...tempMessage }];
       }
@@ -111,7 +123,7 @@ export class Message {
         return;
       }
       saveMessageUpdateDate();
-      const msg = renderMessage(pbType, resp, this._client);
+      const msg = await renderMessage(pbType, resp, this._client);
 
       // if current channel is active, update msg list
       if (getGroupId(resp, this._client) === this._client.channel.activeChannel?.chatid) {

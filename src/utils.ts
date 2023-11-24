@@ -220,12 +220,17 @@ export const getGroupId = (msg: any, client: Client): string => {
   return contentTopic;
 };
 
-export const renderMessage = (
+/// Whether the topic is a group topic
+export function isGroupTopic(contentTopic: string): boolean {
+  return contentTopic.startsWith('group:');
+}
+
+export const renderMessage = async (
   pbType: number,
-  msg: { messageId: string; timestamp: bigint; payload?: any },
+  msg: { messageId: string; timestamp: bigint; payload?: any; contentTopic: string },
   client: Client,
 ) => {
-  const { messageId, timestamp, payload } = msg;
+  const { messageId, timestamp, payload, contentTopic } = msg;
 
   let content = '';
   let senderId = '';
@@ -233,6 +238,10 @@ export const renderMessage = (
     // received message
     content = new TextDecoder().decode(payload);
     senderId = getGroupId(msg, client);
+    if (isGroupTopic(contentTopic)) {
+      // Decrypt mls group message
+      content = await client.mls.mlsDecryptMsg(content, senderId, contentTopic);
+    }
   }
   if (pbType === PbTypeMessageStatusResp) {
     // send message
