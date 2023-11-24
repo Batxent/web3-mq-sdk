@@ -66,4 +66,9 @@ export class MlsClient {
   async mlsDecryptMsg(msg: string, senderUserId: string, groupId: string): Promise<string> {
     return await mls_decrypt_msg(this._keys.userid, msg, senderUserId, groupId);
   }
+
+  // TODO: implement this function
+  // isMlsGroup(groupId: string): boolean {
+  //   return true;
+  // }
 }

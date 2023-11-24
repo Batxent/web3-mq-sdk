@@ -278,20 +278,30 @@ export class Channel {
       // In the future, we may need to add a field to the group creation interface to indicate
       // whether MLS encryption is enabled. The group information interface should also be able to
       // retrieve this identifier.
-      if (await this._client.mls.canAddMemberToGroup(groupid)) {
-        const data = await inviteGroupMemberRequest({
-          web3mq_signature,
-          userid,
-          timestamp,
-          groupid,
-          members,
-        });
-        // If `inviteGroupMemberRequest` success, then:
-        for (const member of members) {
-          await this._client.mls.addMemberToGroup(member, groupid);
-        }
-        return data;
+
+      // flitter the members who can be added to the group
+      members = (
+        await Promise.all(
+          members.map(async (member) => {
+            const canAdd = await this._client.mls.canAddMemberToGroup(member);
+            return canAdd ? member : null;
+          }),
+        )
+      ).filter((member): member is string => member !== null);
+
+      const data = await inviteGroupMemberRequest({
+        web3mq_signature,
+        userid,
+        timestamp,
+        groupid,
+        members,
+      });
+
+      // If `inviteGroupMemberRequest` success, then:
+      for (const member of members) {
+        await this._client.mls.addMemberToGroup(member, groupid);
       }
+      return data;
     }
   }
 
