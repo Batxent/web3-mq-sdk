@@ -42,6 +42,9 @@ const PbTypePongCommand = 0b10000001;
 const PbTypeWeb3MQBridgeConnectCommand = 0b1100100;
 const PbTypeWeb3MQBridgeConnectResp = 0b1100101;
 
+// MLS group event
+const PbTypeMLSGroupEvent = 0b1010000000;
+
 export {
   PbTypeChatReqCommand,
   PbTypeUserTempConnectReqCommand,
@@ -68,5 +71,6 @@ export {
   PbTypePingCommand,
   PbTypePongCommand,
   PbTypeWeb3MQBridgeConnectCommand,
-  PbTypeWeb3MQBridgeConnectResp
+  PbTypeWeb3MQBridgeConnectResp,
+  PbTypeMLSGroupEvent,
 };

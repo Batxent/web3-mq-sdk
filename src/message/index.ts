@@ -11,7 +11,12 @@ import {
   isGroupTopic,
 } from '../utils';
 import { getMessageListRequest, changeMessageStatusRequest } from '../api';
-import { PbTypeMessage, PbTypeMessageStatusResp, PbTypeMessageChangeStatus } from '../core/pbType';
+import {
+  PbTypeMessage,
+  PbTypeMessageStatusResp,
+  PbTypeMessageChangeStatus,
+  PbTypeMLSGroupEvent,
+} from '../core/pbType';
 import {
   Web3MQRequestMessage,
   Web3MQChangeMessageStatus,
@@ -151,6 +156,12 @@ export class Message {
     if (pbType === PbTypeMessageChangeStatus) {
       const resp = Web3MQChangeMessageStatus.fromBinary(bytes);
       console.log('changeMsgStatus:', resp);
+    }
+    if (pbType === PbTypeMLSGroupEvent) {
+      // handle the mls group event
+      const resp = Web3MQRequestMessage.fromBinary(bytes);
+      this._client.mls.handleMlsGroupEvent(resp.payload);
+      console.log('handle mls group event:', resp);
     }
   };
 }

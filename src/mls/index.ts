@@ -12,6 +12,7 @@ import {
   add_member_to_group,
   mls_encrypt_msg,
   mls_decrypt_msg,
+  handle_mls_group_event,
 } from 'web3mq_mls';
 
 import { request } from 'core/request';
@@ -65,6 +66,10 @@ export class MlsClient {
 
   async mlsDecryptMsg(msg: string, senderUserId: string, groupId: string): Promise<string> {
     return await mls_decrypt_msg(this._keys.userid, msg, senderUserId, groupId);
+  }
+
+  async handleMlsGroupEvent(msg: any) {
+    return await handle_mls_group_event(this._keys.userid, msg);
   }
 
   // TODO: implement this function
