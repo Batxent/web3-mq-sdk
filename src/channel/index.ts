@@ -209,6 +209,10 @@ export class Channel {
         group_name: groupName,
         ...params,
       });
+
+    // If `createRoomRequest` success, then:
+    this._client.mls.createGroup(data.groupid);
+
     if (!this.channelList) {
       return;
     }
