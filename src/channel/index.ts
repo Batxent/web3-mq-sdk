@@ -65,6 +65,9 @@ export class Channel {
       userid,
       web3mq_user_signature: web3mq_signature,
     });
+
+    // TODO: sync mls group state
+    await this._client.mls.syncMlsState();
     return data;
   }
 
@@ -265,14 +268,26 @@ export class Channel {
       const signContent = userid + groupid + timestamp;
       const web3mq_signature = await getDataSignature(PrivateKey, signContent);
 
-      const data = await inviteGroupMemberRequest({
-        web3mq_signature,
-        userid,
-        timestamp,
-        groupid,
-        members,
-      });
-      return data;
+      // TODO:
+      // At present, we cannot determine whether a group was created by MLS.
+      // For now, we will treat all groups as MLS groups.
+      // In the future, we may need to add a field to the group creation interface to indicate
+      // whether MLS encryption is enabled. The group information interface should also be able to
+      // retrieve this identifier.
+      if (await this._client.mls.canAddMemberToGroup(groupid)) {
+        const data = await inviteGroupMemberRequest({
+          web3mq_signature,
+          userid,
+          timestamp,
+          groupid,
+          members,
+        });
+        // If `inviteGroupMemberRequest` success, then:
+        for (const member of members) {
+          await this._client.mls.addMemberToGroup(member, groupid);
+        }
+        return data;
+      }
     }
   }
 

@@ -13,6 +13,7 @@ import {
   mls_encrypt_msg,
   mls_decrypt_msg,
 } from 'web3mq_mls';
+
 import { request } from 'core/request';
 
 export class MlsClient {
