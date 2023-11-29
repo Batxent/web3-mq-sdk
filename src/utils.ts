@@ -97,6 +97,11 @@ export const getCurrentDate = () => {
   );
 };
 
+const base64ToString = (str: string) => {
+  const u = Uint8Array.from(atob(str), (c) => c.charCodeAt(0));
+  return new TextDecoder().decode(u);
+};
+
 export const selectUrl = (url: string, type: string = 'http') => {
   if (type === 'ws') {
     let Domain: string = url.split('://')[1];
@@ -164,12 +169,13 @@ export const renderMessagesList = async (msglist: any) => {
   for (let idx = 0; idx < msglist.length; idx++) {
     let msg = msglist[idx];
     let content = '';
-    content = window.atob(msg.payload);
     // if (msg.cipher_suite === 'NONE') {
-    //   content = window.atob(msg.payload);
+    //   content = base64ToString(msg.payload);
     // } else {
     //   throw new Error('This message decode error');
     // }
+
+    content = base64ToString(msg.payload);
     const date = new Date(msg.timestamp);
 
     const timestampStr = `${date.getHours()}:${date.getMinutes()}`;
