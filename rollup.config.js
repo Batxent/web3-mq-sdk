@@ -6,6 +6,7 @@ import ts from 'rollup-plugin-typescript2';
 import { eslint } from 'rollup-plugin-eslint';
 import packageJSON from './package.json';
 import { terser } from 'rollup-plugin-terser';
+import { wasm } from '@rollup/plugin-wasm';
 
 const getPath = (_path) => path.resolve(__dirname, _path);
 
@@ -30,6 +31,7 @@ const esPlugin = eslint({
 const commonConf = {
   input: getPath('./src/index.ts'),
   plugins: [
+    wasm(),
     resolve({ browser: true }, extensions),
     commonjs(),
     esPlugin,

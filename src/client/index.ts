@@ -55,6 +55,7 @@ export class Client {
     this.storage = new Storage(this);
     this.dapp = new Dapp(this);
     this.mls = new MlsClient(this);
+    console.log('constructor');
   }
 
   public static init = async (

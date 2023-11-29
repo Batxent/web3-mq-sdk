@@ -13,10 +13,15 @@ import {
   mls_encrypt_msg,
   mls_decrypt_msg,
   handle_mls_group_event,
+  greet,
 } from 'web3mq_mls';
 
 import { request } from 'core/request';
 
+/**
+ * `MlsClient` is a class for managing the MLS (Messaging Layer Security) protocol.
+ * It's a wrapper of the `web3mq_mls` library which is export by WASM.
+ */
 export class MlsClient {
   private readonly _client: Client;
   private readonly _keys: ClientKeyPaires;
@@ -28,7 +33,12 @@ export class MlsClient {
     const { baseURL } = request.defaults;
     const { userid, PublicKey, PrivateKey } = client.keys;
     // setup mls networking config
+    this.bGreet();
+    console.log('mls client init');
     this.setupNetworkingConfig(baseURL, PublicKey, userid, PrivateKey);
+    this.initialUser().catch((error) => {
+      console.error('Initial user failed:', error);
+    });
   }
 
   setupNetworkingConfig(
@@ -40,6 +50,10 @@ export class MlsClient {
     setup_networking_config(base_url, pubkey, did_key, private_key);
   }
 
+  bGreet() {
+    greet('hello world');
+  }
+
   async initialUser() {
     await initial_user(this._keys.userid);
   }
@@ -48,8 +62,8 @@ export class MlsClient {
     return await create_group(this._keys.userid, groupId);
   }
 
-  async syncMlsState() {
-    await sync_mls_state(this._keys.userid);
+  async syncMlsState(groupIds: string[]) {
+    await sync_mls_state(this._keys.userid, groupIds);
   }
 
   async canAddMemberToGroup(targetUserId: string): Promise<boolean> {
@@ -71,9 +85,4 @@ export class MlsClient {
   async handleMlsGroupEvent(msg: any) {
     return await handle_mls_group_event(this._keys.userid, msg);
   }
-
-  // TODO: implement this function
-  // isMlsGroup(groupId: string): boolean {
-  //   return true;
-  // }
 }

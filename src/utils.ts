@@ -164,11 +164,12 @@ export const renderMessagesList = async (msglist: any) => {
   for (let idx = 0; idx < msglist.length; idx++) {
     let msg = msglist[idx];
     let content = '';
-    if (msg.cipher_suite === 'NONE') {
-      content = window.atob(msg.payload);
-    } else {
-      throw new Error('This message decode error');
-    }
+    content = window.atob(msg.payload);
+    // if (msg.cipher_suite === 'NONE') {
+    //   content = window.atob(msg.payload);
+    // } else {
+    //   throw new Error('This message decode error');
+    // }
     const date = new Date(msg.timestamp);
 
     const timestampStr = `${date.getHours()}:${date.getMinutes()}`;

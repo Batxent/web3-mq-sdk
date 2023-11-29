@@ -1,4 +1,4 @@
-import {request} from '../core/request';
+import { request } from '../core/request';
 
 import {
   CreateRoomApiParams,
@@ -58,11 +58,11 @@ export const createRoomRequest = async (payload: CreateRoomApiParams) => {
   return await request.post('/api/groups/', payload);
 };
 
-// export const getGroupListRequest = async (payload: createRoomParams) => {
-//   return await request.get('/api/groups/', {
-//     params: payload,
-//   });
-// };
+export const getGroupListRequest = async (payload: CommonGetListParams) => {
+  return await request.get('/api/groups/', {
+    params: payload,
+  });
+};
 
 export const getRoomListRequest = async (payload: CommonGetListParams) => {
   return await request.get('/api/chats/', {
@@ -140,7 +140,9 @@ export const getUserInfoRequest = async (payload: GetUserInfoParams) => {
   return await request.post('/api/get_user_info/', payload);
 };
 
-export const userRegisterRequest = async (payload: RegisterApiParams): Promise<RegisterApiResponse> => {
+export const userRegisterRequest = async (
+  payload: RegisterApiParams,
+): Promise<RegisterApiResponse> => {
   return await request.post('/api/user_register_v2/', payload);
 };
 
@@ -234,7 +236,7 @@ export const sendFriendRequest = async (payload: SendFriendParams) => {
 };
 
 export const getMyAuthInfoRequest = async (
-  payload: GetMyAuthInfoParams
+  payload: GetMyAuthInfoParams,
 ): Promise<GetMyAuthInfoResponse> => {
   return await request.post('/api/dapp/user_auth_info/', payload);
 };
@@ -280,16 +282,16 @@ export const publishTopicMessageRequest = async (payload: PublishTopicMessagePar
 };
 
 export const myCreateTopicListRequest = async (payload: GetTopicListParams) => {
-  return await request.get('/api/my_create_topic_list/', {params: payload});
+  return await request.get('/api/my_create_topic_list/', { params: payload });
 };
 
 export const mySubscribeTopicListRequest = async (payload: GetTopicListParams) => {
-  return await request.get('/api/my_subscribe_topic_list/', {params: payload});
+  return await request.get('/api/my_subscribe_topic_list/', { params: payload });
 };
 
 export const getMyCreateDappListRequest = async (payload: GetMyCreateDappListApiParmas) => {
   return await request.get('/api/my_create_dapps/', {
-    params: payload
+    params: payload,
   });
 };
 

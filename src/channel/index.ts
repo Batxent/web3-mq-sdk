@@ -9,6 +9,7 @@ import {
   updateRoomListRequest,
   updateGroupPermissionsRequest,
   syncNewMessagesRequest,
+  getGroupListRequest,
 } from '../api';
 import { getDataSignature, getGroupId, getMessageUpdateDate } from '../utils';
 import {
@@ -66,9 +67,28 @@ export class Channel {
       web3mq_user_signature: web3mq_signature,
     });
 
-    // TODO: sync mls group state
-    await this._client.mls.syncMlsState();
+    // TODO: handle the case where the user has joined more than 20 groups.
+    let groupIds: string[] = await this.queryGroups({
+      page: 1,
+      size: 20,
+    });
+    await this._client.mls.syncMlsState(groupIds);
     return data;
+  }
+
+  /// Fetch all groups which the user joined.
+  async queryGroups(option: PageParams): Promise<string[]> {
+    const { userid, PrivateKey } = this._keys;
+    const timestamp = Date.now();
+    const signContent = userid + timestamp;
+    const web3mq_signature = await getDataSignature(PrivateKey, signContent);
+    const {
+      data: { result = [] },
+    } = await getGroupListRequest({ web3mq_signature, userid, timestamp, ...option });
+    return result.map(async (item: { [key: string]: string }) => {
+      // return the item value
+      return item.value;
+    });
   }
 
   async handleUnread(resp: Web3MQRequestMessage | Web3MQMessageStatusResp, msg: any) {
