@@ -1,18 +1,20 @@
 import path from 'path';
+import { readFileSync } from 'fs';
 import resolve from '@rollup/plugin-node-resolve';
 import commonjs from 'rollup-plugin-commonjs';
 import { babel } from '@rollup/plugin-babel';
 import ts from 'rollup-plugin-typescript2';
 import { eslint } from 'rollup-plugin-eslint';
-import packageJSON from './package.json';
+// import packageJSON from './package.json';
 import { terser } from 'rollup-plugin-terser';
-import { wasm } from '@rollup/plugin-wasm';
+import wasm from '@rollup/plugin-wasm';
+const packageJSON = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8'));
 
 const getPath = (_path) => path.resolve(__dirname, _path);
 
 const isDev = process.env.ROLLUP_WATCH || false;
 
-const extensions = ['.js', '.ts', '.tsx'];
+const extensions = ['.js', '.ts', '.tsx', '.json'];
 
 // ts
 const tsPlugin = ts({
@@ -31,7 +33,6 @@ const esPlugin = eslint({
 const commonConf = {
   input: getPath('./src/index.ts'),
   plugins: [
-    wasm(),
     resolve({ browser: true }, extensions),
     commonjs(),
     esPlugin,
@@ -43,6 +44,7 @@ const commonConf = {
       extensions: ['.js', '.jsx', '.ts', '.tsx', '.scss'],
       exclude: '**/node_modules/**',
     }),
+    wasm(),
   ],
   external: [
     'axios',
@@ -60,7 +62,7 @@ const commonConf = {
 const outputMap = [
   {
     file: packageJSON.main,
-    format: 'umd',
+    format: 'cjs',
     globals: {
       axios: 'axios',
       '@noble/ed25519': 'ed',
