@@ -2,28 +2,11 @@ import { Client } from 'client';
 import { ClientKeyPaires } from '../types';
 
 //
-import init, * as wasm from 'web3mq_mls/web3mq_mls';
-import rust from '../../web3mq_mls_bg.wasm';
+// import init, * as wasm from 'web3mq_mls/web3mq_mls';
+// import rust from '../../web3mq_mls_bg.wasm';
+// import * as wasm from 'web3mq_mls';
 
-//
-// import wasm from 'web3mq_mls';
-
-// let wasm: any;
-
-// import {
-//   add_member_to_group,
-//   can_add_member_to_group,
-//   create_group,
-//   greet,
-//   handle_mls_group_event,
-//   initial_user,
-//   mls_decrypt_msg,
-//   mls_encrypt_msg,
-//   setup_networking_config,
-//   sync_mls_state,
-// } from 'web3mq_mls';
-
-// import { request } from 'core/request';
+import { request, theDidKey } from 'core/request';
 
 /**
  * `MlsClient` is a class for managing the MLS (Messaging Layer Security) protocol.
@@ -32,99 +15,28 @@ import rust from '../../web3mq_mls_bg.wasm';
 export class MlsClient {
   private readonly _client: Client;
   private readonly _keys: ClientKeyPaires;
+  private readonly _wasm: any;
 
-  constructor(client: Client) {
+  constructor(client: Client, wasm: any) {
     this._client = client;
     this._keys = client.keys;
+    this._wasm = wasm;
 
-    // import('../../web3mq_mls_bg.wasm')
-    //   .then()
-    // init().then((i) => {
-    //   console.log('loaded_wasm:', i);
-    // });
+    const { baseURL } = request.defaults;
+    const { PublicKey, PrivateKey } = client.keys;
 
-    rust().then((i: any) => {
-      console.log('loaded_wasm:', i);
-      init(i).then(() => {
-        console.log('init wasm');
-        wasm.greet('hello world');
-      });
-    });
-
-    // .then((i) => init(i)ƒ)
-    // .then(() => wasm.greet('hello world'));
-
-    // rust().then({instance} => {
-    //   console.log('loaded_wasm:', instance);
-    //   initSync(instance).then(() => {
-    //     console.log('init wasm');
-    //     wasm.greet('hello world');
-    //   });
-    // });
-
-    // import('web3mq_mls').then((instance) => {
-    //   console.log('loaded_wasm:', instance);
-    //   wasm = instance;
-    //   instance.greet('hello world');
-    // });
-
-    // import('web3mq_mls')
-    //   .then((m) => {
-    //     wasm = m;
-    //     console.log(m);
-    //     m.greet('hello world');
-    //   })
-    //   .catch((error) => {
-    //     console.error('Rust function failed:', error);
-    //   });
-
-    // wasm.greet('hello');
-
-    // const { baseURL } = request.defaults;
-    // const { userid, PublicKey, PrivateKey } = client.keys;
+    console.log('the did key is:', theDidKey);
     // setup mls networking config
-
-    // rust
-    //   .then((m) => {
-    //     wasm = m;
-    //     console.log('hello!');
-    //     // this.bGreet();
-    //     // this.setupNetworkingConfig(baseURL, PublicKey, userid, PrivateKey);
-    //     // this.initialUser().catch((error) => {
-    //     //   console.error('Initial user failed:', error);
-    //     // });
-    //   })
-    //   .catch(console.error);
-
-    // init(wasm).then(() => {
-    //   // this.bGreet();
-    //   console.log('mls client init');
-    // });
-
-    // wasm().then((instance) => {
-    //   init(instance).then(() => {
-    //     this.bGreet();
-    //     this.setupNetworkingConfig(baseURL, PublicKey, userid, PrivateKey);
-    //     this.initialUser().catch((error) => {
-    //       console.error('Initial user failed:', error);
-    //     });
-    //   });
-    // });
-
-    // init(wasm).then(() => {
-    //   this.bGreet();
-    //   this.setupNetworkingConfig(baseURL, PublicKey, userid, PrivateKey);
-    //   this.initialUser().catch((error) => {
-    //     console.error('Initial user failed:', error);
-    //   });
-    // });
-
-    // this.bGreet();
-    // console.log('mls client init');
-    // this.setupNetworkingConfig(baseURL, PublicKey, userid, PrivateKey);
-    // this.initialUser().catch((error) => {
-    //   console.error('Initial user failed:', error);
-    // });
+    this.setupNetworkingConfig(baseURL, PublicKey, theDidKey, PrivateKey);
+    this.initialUser()
+      .then(() => {
+        console.log('mls user init');
+        this.registerUser();
+      })
+      .catch((error) => {
+        console.error('Initial user failed:', error);
+      });
+    console.log('mls client init');
   }
 
   setupNetworkingConfig(
@@ -133,42 +45,50 @@ export class MlsClient {
     did_key?: string,
     private_key?: string,
   ) {
-    wasm.setup_networking_config(base_url, pubkey, did_key, private_key);
+    this._wasm.setup_networking_config(base_url, pubkey, did_key, private_key);
   }
 
   bGreet() {
-    wasm.greet('hello world');
+    this._wasm.greet('hello world');
   }
 
   async initialUser() {
-    await wasm.initial_user(this._keys.userid);
+    await this._wasm.initial_user(this._keys.userid);
+  }
+
+  async registerUser() {
+    await this._wasm.register_user(this._keys.userid);
   }
 
   async createGroup(groupId: string): Promise<string> {
-    return await wasm.create_group(this._keys.userid, groupId);
+    return await this._wasm.create_group(this._keys.userid, groupId);
+  }
+
+  async isMlsGroup(groupId: string): Promise<boolean> {
+    return await this._wasm.is_mls_group(this._keys.userid, groupId);
   }
 
   async syncMlsState(groupIds: string[]) {
-    await wasm.sync_mls_state(this._keys.userid, groupIds);
+    await this._wasm.sync_mls_state(this._keys.userid, groupIds);
   }
 
   async canAddMemberToGroup(targetUserId: string): Promise<boolean> {
-    return await wasm.can_add_member_to_group(this._keys.userid, targetUserId);
+    return await this._wasm.can_add_member_to_group(this._keys.userid, targetUserId);
   }
 
   async addMemberToGroup(memberUserId: string, groupId: string) {
-    await wasm.add_member_to_group(this._keys.userid, memberUserId, groupId);
+    await this._wasm.add_member_to_group(this._keys.userid, memberUserId, groupId);
   }
 
   async mlsEncryptMsg(msg: string, groupId: string): Promise<string> {
-    return await wasm.mls_encrypt_msg(this._keys.userid, msg, groupId);
+    return await this._wasm.mls_encrypt_msg(this._keys.userid, msg, groupId);
   }
 
   async mlsDecryptMsg(msg: string, senderUserId: string, groupId: string): Promise<string> {
-    return await wasm.mls_decrypt_msg(this._keys.userid, msg, senderUserId, groupId);
+    return await this._wasm.mls_decrypt_msg(this._keys.userid, msg, senderUserId, groupId);
   }
 
   async handleMlsGroupEvent(msg: any) {
-    return await wasm.handle_mls_group_event(this._keys.userid, msg);
+    return await this._wasm.handle_mls_group_event(this._keys.userid, msg);
   }
 }

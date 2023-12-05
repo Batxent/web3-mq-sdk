@@ -74,14 +74,17 @@ export class Channel {
       userid,
       web3mq_user_signature: web3mq_signature,
     });
+    return data;
+  }
 
+  private async syncMlsEvents() {
     // TODO: handle the case where the user has joined more than 20 groups.
     let groupIds: string[] = await this.queryGroups({
       page: 1,
-      size: 20,
+      size: 40,
     });
+    console.log('groupIds:', groupIds);
     await this._client.mls.syncMlsState(groupIds);
-    return data;
   }
 
   /// Fetch all groups which the user joined.
@@ -93,10 +96,11 @@ export class Channel {
     const {
       data: { result = [] },
     } = await getGroupListRequest({ web3mq_signature, userid, timestamp, ...option });
-    return result.map(async (item: { [key: string]: string }) => {
-      // return the item value
-      return item.value;
-    });
+    return await Promise.all(
+      result.map((item: { [key: string]: string }) => {
+        return item.groupid;
+      }),
+    );
   }
 
   async handleUnread(resp: Web3MQRequestMessage | Web3MQMessageStatusResp, msg: any) {
@@ -140,6 +144,9 @@ export class Channel {
         data.unread = 0;
         await this._client.storage.setData(channel?.chatid as string, data);
       }
+      let isMls = await this._client.mls.isMlsGroup(channel.chatid);
+      console.log('debug: isMls:', isMls);
+      this.activeChannel!.isMls = isMls;
     }
     this._client.emit('channel.activeChange', { type: 'channel.activeChange' });
     // if (data && data.unread !== 0) {
@@ -166,6 +173,8 @@ export class Channel {
     } = await getRoomListRequest({ web3mq_signature, userid, timestamp, ...option });
 
     const allNewMessageData = await this.syncNewMessages();
+
+    await this.syncMlsEvents();
 
     const list = await Promise.all(
       result.map(async (item: ChannelItemType) => {
@@ -344,6 +353,10 @@ export class Channel {
           }),
         )
       ).filter((member): member is string => member !== null);
+
+      if (members.length === 0) {
+        return;
+      }
 
       const data = await inviteGroupMemberRequest({
         web3mq_signature,

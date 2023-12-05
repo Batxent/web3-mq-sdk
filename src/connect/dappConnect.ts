@@ -21,7 +21,8 @@ import {
   aesGCMEncrypt,
   Uint8ToBase64String,
   aesGCMDecrypt,
-  Base64StringToUint8, fromHexString,
+  Base64StringToUint8,
+  fromHexString,
 } from '../encryption';
 import {
   SignClientCallBackType,
@@ -146,6 +147,7 @@ export class DappConnect {
   }
 
   private async onMessageCallback(PbType: number, bytes: Uint8Array) {
+    console.log('debug:onMessageCallback:', PbType);
     switch (PbType) {
       case PbTypeWeb3MQBridgeConnectResp:
         const resp = Web3MQBridgeConnectCommand.fromBinary(bytes);

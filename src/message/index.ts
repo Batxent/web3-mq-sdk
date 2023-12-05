@@ -48,7 +48,7 @@ export class Message {
       const {
         data: { result = [] },
       } = await getMessageListRequest({ userid, timestamp, web3mq_signature, topic, ...option });
-      const data = await renderMessagesList(result);
+      const data = await renderMessagesList(result, this._client);
       const list = data.reverse() ?? [];
       if (this.messageList && option.page !== 1) {
         this.messageList = [...this.messageList, ...list];
@@ -84,24 +84,39 @@ export class Message {
     }
   }
 
-  async sendMessage(msg: string, userId?: string, didType?: DidType) {
+  async sendMessage(msg: string, userId?: string, didType?: DidType, enableMls: boolean = false) {
     const { keys, connect, channel } = this._client;
     const topicId = userId
       ? await transformAddress(userId, didType)
       : channel.activeChannel?.chatid;
 
+    let cipherSuite = 'None';
+    console.log('debug:sendMessage:enableMls', enableMls);
     if (topicId) {
-      if (isGroupTopic(topicId)) {
+      this.msg_text = msg;
+      let isMlsGroup = await this._client.mls.isMlsGroup(topicId);
+      console.log('debug:sendMessage:isMlsGroup', isMlsGroup);
+      if (isGroupTopic(topicId) && isMlsGroup && enableMls) {
+        cipherSuite = 'MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519';
         msg = await this._client.mls.mlsEncryptMsg(msg, topicId);
       }
 
-      this.msg_text = msg;
-      const { concatArray, msgid } = await sendMessageCommand(keys, topicId, msg, connect.nodeId);
+      console.log('debug:sendMessage:cipherSuite', cipherSuite);
+
+      const { concatArray, msgid } = await sendMessageCommand(
+        keys,
+        topicId,
+        msg,
+        connect.nodeId,
+        cipherSuite,
+      );
 
       const tempMessageData = {
         messageId: msgid,
         timestamp: BigInt(Math.round(Date.now() / 1000)),
+        payload: msg,
         contentTopic: topicId,
+        cipher_suite: cipherSuite,
       };
 
       const tempMessage = await renderMessage(
@@ -109,6 +124,7 @@ export class Message {
         tempMessageData,
         this._client,
       );
+
       if (this.messageList) {
         this.messageList = [...this.messageList, { ...tempMessage }];
       }
@@ -127,8 +143,10 @@ export class Message {
       if (resp.messageType === 'dapp_bridge') {
         return;
       }
+      console.log('debug:receive:PbTypeMessage:resp', resp);
       saveMessageUpdateDate();
       const msg = await renderMessage(pbType, resp, this._client);
+      console.log('debug:receive:PbTypeMessage:msg', msg);
 
       // if current channel is active, update msg list
       if (getGroupId(resp, this._client) === this._client.channel.activeChannel?.chatid) {
@@ -145,7 +163,8 @@ export class Message {
     if (pbType === PbTypeMessageStatusResp) {
       const resp = Web3MQMessageStatusResp.fromBinary(bytes);
       saveMessageUpdateDate();
-      const msg = renderMessage(pbType, resp, this._client);
+      const msg = await renderMessage(pbType, resp, this._client);
+      console.log('debug:receive:PbTypeMessageStatusResp:PbTypeMessageStatusResp:msg', msg);
       this._client.channel.handleUnread(resp, msg);
       if (this.messageList) {
         const msgList = updateMessageLoadStatus(this.messageList, msg);
@@ -160,6 +179,7 @@ export class Message {
     if (pbType === PbTypeMLSGroupEvent) {
       // handle the mls group event
       const resp = Web3MQRequestMessage.fromBinary(bytes);
+      console.log('debug:receive:PbTypeMLSGroupEvent', resp);
       this._client.mls.handleMlsGroupEvent(resp.payload);
       console.log('handle mls group event:', resp);
     }

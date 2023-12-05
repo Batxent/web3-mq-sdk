@@ -73,6 +73,7 @@ const outputMap = [
       starknet: 'starknet',
       qrcode: 'qrcode',
     },
+    inlineDynamicImports: true,
   },
   // {
   //   file: packageJSON.module,

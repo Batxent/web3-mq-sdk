@@ -243,6 +243,7 @@ export type ChannelItemType = {
   updatedAt?: string;
   unread?: number;
   lastMessage?: string;
+  isMls?: boolean;
   // topic: string;
   // topic_type: string;
 };

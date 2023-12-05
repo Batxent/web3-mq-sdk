@@ -101,10 +101,10 @@ export const sendMessageCommand = async (
   topic: string,
   msg: string,
   nodeId: string,
+  cipherSuite: string = 'None',
 ): Promise<{ concatArray: Uint8Array; msgid: string }> => {
   const { userid, PrivateKey, PublicKey } = keys;
   const timestamp = Date.now();
-  const cipherSuite = 'NONE';
   const byteData = new TextEncoder().encode(msg);
 
   const msgid = await GenerateMessageID(userid, topic, timestamp, byteData);
@@ -183,7 +183,6 @@ export const sendWeb3mqSignatureCommand = async (options: any) => {
     validatePubKey,
     extraData: {},
   };
-
 
   const bytes = Web3MQRequestMessage.toBinary(reqCmd);
   const concatArray = GetContactBytes(PbTypeMessage, bytes);

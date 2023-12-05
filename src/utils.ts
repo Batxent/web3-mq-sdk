@@ -164,22 +164,30 @@ export const getFastestUrl = async (env: EnvTypes = 'test') => {
   return list.sort(handleSort('time'))[0].url;
 };
 
-export const renderMessagesList = async (msglist: any) => {
+export const renderMessagesList = async (msglist: any, client: Client) => {
   let messages = [];
   for (let idx = 0; idx < msglist.length; idx++) {
     let msg = msglist[idx];
     let content = '';
-    // if (msg.cipher_suite === 'NONE') {
-    //   content = base64ToString(msg.payload);
-    // } else {
-    //   throw new Error('This message decode error');
-    // }
 
-    content = base64ToString(msg.payload);
+    console.log('debug:renderMessagesList:msg', msg);
+    if (msg.cipher_suite.toLowerCase() == 'none') {
+      content = base64ToString(msg.payload);
+    } else if (msg.cipher_suite === 'MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519') {
+      let temp = base64ToString(msg.payload);
+      try {
+        content = await client.mls.mlsDecryptMsg(temp, msg.from, msg.topic);
+      } catch (error) {
+        console.error('Error decrypting message:', error);
+        // Handle the error appropriately here
+        content = temp;
+      }
+    } else {
+      throw new Error('This message decode error');
+    }
+
     const date = new Date(msg.timestamp);
-
     const timestampStr = `${date.getHours()}:${date.getMinutes()}`;
-
     const dateStr = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
 
     const cacheUserInfo = localStorage.getItem(`user_info_${msg.from}`);
@@ -193,7 +201,8 @@ export const renderMessagesList = async (msglist: any) => {
         timestamp: Date.now(),
         my_userid: '',
       });
-      localStorage.setItem(`user_info_${msg.from}`, JSON.stringify(data));
+      let value = JSON.stringify(data);
+      localStorage.setItem(`user_info_${msg.from}`, value);
       userInfo = data;
     }
     const item = {
@@ -234,20 +243,36 @@ export function isGroupTopic(contentTopic: string): boolean {
 
 export const renderMessage = async (
   pbType: number,
-  msg: { messageId: string; timestamp: bigint; payload?: any; contentTopic: string },
+  msg: {
+    messageId: string;
+    timestamp: bigint;
+    payload?: any;
+    contentTopic: string;
+    cipher_suite?: string;
+    cipherSuite?: string;
+    comeFrom?: string;
+  },
   client: Client,
 ) => {
-  const { messageId, timestamp, payload, contentTopic } = msg;
-
+  const { messageId, timestamp, payload, contentTopic, cipher_suite, cipherSuite, comeFrom } = msg;
   let content = '';
   let senderId = '';
+  //
+  let cipherSuiteValue = cipher_suite || cipherSuite;
+  msg.cipherSuite = cipherSuiteValue;
+  msg.cipher_suite = cipherSuiteValue;
+  console.log('debug:renderMessage:cipherSuiteValue:', cipherSuiteValue);
+
   if (pbType === PbTypeMessage) {
+    senderId = comeFrom ?? '';
     // received message
-    content = new TextDecoder().decode(payload);
-    senderId = getGroupId(msg, client);
-    if (isGroupTopic(contentTopic)) {
-      // Decrypt mls group message
+    if (cipherSuiteValue?.toLocaleLowerCase() === 'none') {
+      content = new TextDecoder().decode(payload);
+      console.log('debug:renderMessage:none:', content);
+    } else if (cipherSuiteValue === 'MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519') {
+      content = new TextDecoder().decode(payload);
       content = await client.mls.mlsDecryptMsg(content, senderId, contentTopic);
+      console.log('debug:renderMessage:MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519:', content);
     }
   }
   if (pbType === PbTypeMessageStatusResp) {
@@ -264,6 +289,7 @@ export const renderMessage = async (
   let dateStr = date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + date.getDate();
 
   let message: any = {
+    ...msg,
     _id: messageId,
     id: messageId,
     indexId: messageId,

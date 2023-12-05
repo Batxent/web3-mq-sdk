@@ -3,8 +3,10 @@ import axios, { AxiosRequestConfig, AxiosInstance, AxiosResponse } from 'axios';
 import { ServiceResponse } from '../types';
 
 export let request: AxiosInstance;
+export let theDidKey: string = '';
 export class Request {
   constructor(httpUrl: string, tempPubkey: string = '', didKey: string = '') {
+    theDidKey = didKey;
     request = axios.create({
       baseURL: httpUrl,
       headers: {

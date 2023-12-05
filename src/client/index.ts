@@ -40,7 +40,7 @@ export class Client {
   topic: Topic;
   storage: Storage;
   dapp: Dapp;
-  mls: MlsClient;
+  mls!: MlsClient;
 
   constructor(keys: KeyPairsType) {
     this.keys = keys;
@@ -54,8 +54,10 @@ export class Client {
     this.topic = new Topic(this);
     this.storage = new Storage(this);
     this.dapp = new Dapp(this);
-    this.mls = new MlsClient(this);
-    console.log('constructor');
+  }
+
+  public setupWasmModule(wasm: any) {
+    this.mls = new MlsClient(this, wasm);
   }
 
   public static init = async (
@@ -84,6 +86,7 @@ export class Client {
     if (Client._instance.keys.PrivateKey !== keys.PrivateKey) {
       Client._instance = new Client(keys);
     }
+    return Client._instance as Client;
   };
 
   public static getSignClient = (
