@@ -54,10 +54,7 @@ export class Client {
     this.topic = new Topic(this);
     this.storage = new Storage(this);
     this.dapp = new Dapp(this);
-  }
-
-  public setupWasmModule(wasm: any) {
-    this.mls = new MlsClient(this, wasm);
+    this.mls = new MlsClient(this);
   }
 
   public static init = async (

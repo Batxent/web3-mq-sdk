@@ -6,7 +6,7 @@
     "target": "esnext", // 编译目标
     "module": "esnext", // 模块类型
     "moduleResolution": "node",
-    "allowJs": false, // 是否编辑js文件
+    "allowJs": true, // 是否编辑js文件
     "strict": true, // 严格模式
     "noUnusedLocals": false, // 未使用变量报错
     "experimentalDecorators": true, // 启动装饰器

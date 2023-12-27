@@ -1,20 +1,22 @@
+import { fileURLToPath } from 'url';
 import path from 'path';
 import { readFileSync } from 'fs';
 import resolve from '@rollup/plugin-node-resolve';
-import commonjs from 'rollup-plugin-commonjs';
+import commonjs from '@rollup/plugin-commonjs';
 import { babel } from '@rollup/plugin-babel';
 import ts from 'rollup-plugin-typescript2';
 import { eslint } from 'rollup-plugin-eslint';
-// import packageJSON from './package.json';
-import { terser } from 'rollup-plugin-terser';
+import terser from '@rollup/plugin-terser';
 import wasm from '@rollup/plugin-wasm';
 const packageJSON = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8'));
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 const getPath = (_path) => path.resolve(__dirname, _path);
 
 const isDev = process.env.ROLLUP_WATCH || false;
 
-const extensions = ['.js', '.ts', '.tsx', '.json'];
+const extensions = ['.js', '.ts', '.tsx', '.json', '.wasm'];
 
 // ts
 const tsPlugin = ts({
@@ -55,6 +57,7 @@ const commonConf = {
     'qrcode',
     // 'get-starknet', // 暂时不能做为外部依赖，只能先打到js包里面
     'starknet',
+    'web3mq_mls',
   ],
 };
 
@@ -71,6 +74,7 @@ const outputMap = [
       'get-starknet': 'get-starknet',
       'js-sha256': 'js-sha256',
       starknet: 'starknet',
+      web3mq_mls: 'web3mq_mls',
       qrcode: 'qrcode',
     },
     inlineDynamicImports: true,

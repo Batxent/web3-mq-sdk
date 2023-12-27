@@ -1,11 +1,5 @@
 import { Client } from 'client';
 import { ClientKeyPaires } from '../types';
-
-//
-// import init, * as wasm from 'web3mq_mls/web3mq_mls';
-// import rust from '../../web3mq_mls_bg.wasm';
-// import * as wasm from 'web3mq_mls';
-
 import { request, theDidKey } from 'core/request';
 
 /**
@@ -15,28 +9,32 @@ import { request, theDidKey } from 'core/request';
 export class MlsClient {
   private readonly _client: Client;
   private readonly _keys: ClientKeyPaires;
-  private readonly _wasm: any;
+  private _wasm: any;
 
-  constructor(client: Client, wasm: any) {
+  constructor(client: Client) {
     this._client = client;
     this._keys = client.keys;
-    this._wasm = wasm;
 
     const { baseURL } = request.defaults;
     const { PublicKey, PrivateKey } = client.keys;
+    this.setupWasm().then(() => {
+      // setup mls networking config
+      this.setupNetworkingConfig(baseURL, PublicKey, theDidKey, PrivateKey);
+      this.initialUser()
+        .then(() => {
+          console.log('mls user init');
+          this.registerUser();
+        })
+        .catch((error) => {
+          console.error('Initial user failed:', error);
+        });
+    });
+  }
 
-    console.log('the did key is:', theDidKey);
-    // setup mls networking config
-    this.setupNetworkingConfig(baseURL, PublicKey, theDidKey, PrivateKey);
-    this.initialUser()
-      .then(() => {
-        console.log('mls user init');
-        this.registerUser();
-      })
-      .catch((error) => {
-        console.error('Initial user failed:', error);
-      });
-    console.log('mls client init');
+  async setupWasm() {
+    console.log('start loading wasm from sdk');
+    this._wasm = await import('web3mq_mls');
+    console.log(this._wasm, 'wasm loaded from sdk');
   }
 
   setupNetworkingConfig(
