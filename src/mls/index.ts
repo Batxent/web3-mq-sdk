@@ -32,9 +32,7 @@ export class MlsClient {
   }
 
   async setupWasm() {
-    console.log('start loading wasm from sdk');
     this._wasm = await import('web3mq_mls');
-    console.log(this._wasm, 'wasm loaded from sdk');
   }
 
   setupNetworkingConfig(
@@ -44,10 +42,6 @@ export class MlsClient {
     private_key?: string,
   ) {
     this._wasm.setup_networking_config(base_url, pubkey, did_key, private_key);
-  }
-
-  bGreet() {
-    this._wasm.greet('hello world');
   }
 
   async initialUser() {

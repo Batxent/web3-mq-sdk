@@ -40,7 +40,7 @@ export class Client {
   topic: Topic;
   storage: Storage;
   dapp: Dapp;
-  mls!: MlsClient;
+  mls: MlsClient;
 
   constructor(keys: KeyPairsType) {
     this.keys = keys;
